@@ -1,0 +1,6 @@
+# сырые дампы словарей — качаются скриптом, в репу не нужны
+data/*.jsonl
+data/*.txt
+data/*.gz
+node_modules/
+.DS_Store

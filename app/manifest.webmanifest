@@ -1,0 +1,13 @@
+{
+  "name": "Wortschatz — немецкий словарный запас",
+  "short_name": "Wortschatz",
+  "start_url": ".",
+  "scope": ".",
+  "display": "standalone",
+  "background_color": "#1b1d21",
+  "theme_color": "#1b1d21",
+  "lang": "ru",
+  "icons": [
+    { "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }
+  ]
+}

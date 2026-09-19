@@ -1,0 +1,20 @@
+services:
+  # Само приложение. Наружу смотрит только этот контейнер.
+  web:
+    build: .
+    image: wortschatz:latest
+    container_name: wortschatz
+    restart: unless-stopped
+    ports:
+      - "${PORT:-8080}:80"
+
+  # Пересборка словаря: docker compose run --rm builder
+  # Профиль tools нужен, чтобы `docker compose up` его не поднимал.
+  builder:
+    build:
+      context: .
+      dockerfile: Dockerfile.build
+    profiles: ["tools"]
+    volumes:
+      - ./data:/work/data      # сырые дампы (1,1 ГБ) остаются на хосте
+      - ./app:/work/app        # сюда кладётся собранный wortschatz.db

@@ -1,0 +1,7 @@
+# Домен подставляется из переменной DOMAIN (см. .env).
+# Caddy сам получает и продлевает сертификат Let's Encrypt —
+# без HTTPS браузер не зарегистрирует service worker, и офлайна не будет.
+{$DOMAIN} {
+	encode gzip
+	reverse_proxy web:80
+}

@@ -1,0 +1,25 @@
+# Продакшен: docker compose -f docker-compose.yml -f docker-compose.prod.yml up -d
+# Наружу торчит только Caddy; web остаётся во внутренней сети.
+services:
+  web:
+    ports: !reset []
+
+  caddy:
+    image: caddy:2-alpine
+    container_name: wortschatz-caddy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      DOMAIN: ${DOMAIN:?нужно задать DOMAIN в .env}
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy_data:/data      # сертификаты: том обязателен, иначе
+      - caddy_config:/config  # при каждом рестарте новый запрос к Let's Encrypt
+    depends_on:
+      - web
+
+volumes:
+  caddy_data:
+  caddy_config:

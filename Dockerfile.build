@@ -1,0 +1,13 @@
+# Пересборка словаря. Запускается вручную, в продакшене не нужен:
+# на VPS едет уже готовый app/wortschatz.db.
+# Зависимостей нет — build_db.py написан на голой стандартной библиотеке.
+FROM python:3.12-alpine
+
+RUN apk add --no-cache curl bash
+
+WORKDIR /work
+COPY scripts/ /work/scripts/
+
+# data/ и app/ монтируются томами, чтобы гигабайтные дампы
+# и результат оставались на хосте, а не в слое образа.
+CMD ["sh", "-c", "./scripts/fetch_sources.sh && python3 scripts/build_db.py"]

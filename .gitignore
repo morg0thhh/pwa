@@ -4,3 +4,4 @@ data/*.txt
 data/*.gz
 node_modules/
 .DS_Store
+.env

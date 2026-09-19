@@ -1,0 +1,45 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>Wortschatz</title>
+<meta name="theme-color" content="#1b1d21">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="stylesheet" href="css/app.css">
+</head>
+<body>
+<header>
+  <h1>Wortschatz</h1>
+  <p id="stats" class="stats">загружаю словарь…</p>
+</header>
+
+<main>
+  <div class="controls">
+    <select id="level" aria-label="уровень">
+      <option value="">все уровни</option>
+      <option>A1</option><option>A2</option><option>B1</option>
+      <option>B2</option><option>C1</option>
+    </select>
+    <input id="q" type="search" placeholder="поиск: haus, дом, house" autocomplete="off">
+  </div>
+
+  <ul id="results"></ul>
+
+  <section id="card" class="card"></section>
+
+  <div class="actions">
+    <button id="reveal">показать перевод <kbd>␣</kbd></button>
+    <button id="next" class="primary">следующее <kbd>→</kbd></button>
+  </div>
+</main>
+
+<footer>
+  Данные: <a href="https://kaikki.org">Wiktionary</a> (CC BY-SA 4.0),
+  частотность — OpenSubtitles
+</footer>
+
+<script src="js/app.js"></script>
+</body>
+</html>

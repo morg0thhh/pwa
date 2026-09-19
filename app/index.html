@@ -6,40 +6,118 @@
 <title>Wortschatz</title>
 <meta name="theme-color" content="#1b1d21">
 <link rel="manifest" href="manifest.webmanifest">
-<link rel="icon" href="icon.svg" type="image/svg+xml">
+<link rel="icon" href="icon-192.png" type="image/png">
 <link rel="stylesheet" href="css/app.css">
 </head>
 <body>
-<header>
-  <h1>Wortschatz</h1>
-  <p id="stats" class="stats">загружаю словарь…</p>
-</header>
 
-<main>
-  <div class="controls">
-    <select id="level" aria-label="уровень">
-      <option value="">все уровни</option>
-      <option>A1</option><option>A2</option><option>B1</option>
-      <option>B2</option><option>C1</option>
-    </select>
-    <input id="q" type="search" placeholder="поиск: haus, дом, house" autocomplete="off">
+<!-- Онбординг: показывается, пока не создан ни один профиль -->
+<section id="onboarding" class="view" hidden>
+  <div class="hero">
+    <div class="mascot-slot big" data-state="idle"></div>
+    <h1>Wortschatz</h1>
+    <p class="lead">10 000 самых частотных слов языка с интервальными повторениями.
+       Всё хранится на этом устройстве.</p>
   </div>
 
-  <ul id="results"></ul>
+  <fieldset class="field">
+    <legend>Какой язык учим?</legend>
+    <div class="choices lang" id="langChoice"></div>
+  </fieldset>
 
-  <section id="card" class="card"></section>
+  <label class="field">
+    <span>Как тебя зовут?</span>
+    <input id="newName" type="text" placeholder="имя профиля" maxlength="24">
+  </label>
 
-  <div class="actions">
-    <button id="reveal">показать перевод <kbd>␣</kbd></button>
-    <button id="next" class="primary">следующее <kbd>→</kbd></button>
+  <fieldset class="field">
+    <legend>Сколько слов примерно уже знаешь?</legend>
+    <div class="choices" id="startChoice">
+      <label><input type="radio" name="start" value="0" checked><b>Начинаю с нуля</b><span>с самых частотных</span></label>
+      <label><input type="radio" name="start" value="300"><b>Базовый набор</b><span>пропустить первые 300</span></label>
+      <label><input type="radio" name="start" value="1000"><b>Уровень A2</b><span>пропустить первые 1000</span></label>
+      <label><input type="radio" name="start" value="2500"><b>Уровень B1</b><span>пропустить первые 2500</span></label>
+    </div>
+  </fieldset>
+
+  <label class="field">
+    <span>Новых слов в день: <b id="dailyOut">15</b></span>
+    <input id="daily" type="range" min="5" max="50" step="5" value="15">
+  </label>
+
+  <button id="createProfile" class="primary big">Начать</button>
+  <p class="switch"><a href="#" id="toProfiles">у меня уже есть профиль</a></p>
+</section>
+
+<!-- Выбор профиля -->
+<section id="profiles" class="view" hidden>
+  <h1>Кто занимается?</h1>
+  <ul id="profileList" class="profile-list"></ul>
+  <button id="addProfile">+ новый профиль</button>
+</section>
+
+<!-- Основной экран -->
+<section id="main" class="view" hidden>
+  <header>
+    <div class="who">
+      <button id="switchProfile" class="linkish" title="сменить профиль">
+        <span id="whoName"></span> ▾
+      </button>
+      <p id="queueInfo" class="stats"></p>
+    </div>
+
+    <div class="langs" id="langSwitch" role="tablist" aria-label="язык"></div>
+
+    <nav class="tabs">
+      <button data-tab="study" class="active">Учить</button>
+      <button data-tab="search">Поиск</button>
+      <button data-tab="stats">Прогресс</button>
+    </nav>
+  </header>
+
+  <!-- вкладка: тренировка -->
+  <div id="tab-study" class="tab">
+    <section id="card" class="card"></section>
+    <div id="gradeBar" class="grades" hidden>
+      <button data-grade="0" class="g-again">не помню<kbd>1</kbd></button>
+      <button data-grade="1" class="g-hard">трудно<kbd>2</kbd></button>
+      <button data-grade="2" class="g-good">помню<kbd>3</kbd></button>
+      <button data-grade="3" class="g-easy">легко<kbd>4</kbd></button>
+    </div>
+    <div id="revealBar" class="actions">
+      <button id="reveal" class="primary">показать перевод <kbd>␣</kbd></button>
+    </div>
   </div>
-</main>
+
+  <!-- вкладка: поиск -->
+  <div id="tab-search" class="tab" hidden>
+    <div class="controls">
+      <select id="level" aria-label="уровень">
+        <option value="">все уровни</option>
+        <option>A1</option><option>A2</option><option>B1</option>
+        <option>B2</option><option>C1</option>
+      </select>
+      <input id="q" type="search" placeholder="haus, дом, house" autocomplete="off">
+    </div>
+    <ul id="results"></ul>
+  </div>
+
+  <!-- вкладка: прогресс -->
+  <div id="tab-stats" class="tab" hidden>
+    <div class="tiles" id="tiles"></div>
+    <figure class="chart-figure">
+      <figcaption>Повторений в день, последние 30 дней</figcaption>
+      <div id="chart" class="chart"></div>
+    </figure>
+    <div id="levelBreak" class="level-break"></div>
+    <button id="resetProfile" class="danger">удалить этот профиль</button>
+  </div>
+</section>
 
 <footer>
-  Данные: <a href="https://kaikki.org">Wiktionary</a> (CC BY-SA 4.0),
-  частотность — OpenSubtitles
+  Данные: <a href="https://kaikki.org">Wiktionary</a> (CC BY-SA 4.0), частотность — OpenSubtitles
 </footer>
 
-<script src="js/app.js"></script>
+<script type="module" src="js/app.js"></script>
 </body>
 </html>

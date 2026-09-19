@@ -1,5 +1,5 @@
-# Пересборка словаря. Запускается вручную, в продакшене не нужен:
-# на VPS едет уже готовый app/wortschatz.db.
+# Пересборка словарей. Запускается вручную, в продакшене не нужен:
+# на VPS едут уже готовые app/db/*.db.
 # Зависимостей нет — build_db.py написан на голой стандартной библиотеке.
 FROM python:3.12-alpine
 
@@ -8,6 +8,9 @@ RUN apk add --no-cache curl bash
 WORKDIR /work
 COPY scripts/ /work/scripts/
 
+# Какие языки собирать: docker compose run --rm -e LANGS=it builder
+ENV LANGS="de it en"
+
 # data/ и app/ монтируются томами, чтобы гигабайтные дампы
 # и результат оставались на хосте, а не в слое образа.
-CMD ["sh", "-c", "./scripts/fetch_sources.sh && python3 scripts/build_db.py"]
+CMD ["sh", "-c", "./scripts/fetch_sources.sh $LANGS && python3 scripts/build_db.py $LANGS"]

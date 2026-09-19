@@ -4,16 +4,26 @@
 
 importScripts("../vendor/sql-wasm.js");
 
+let SQL = null;
 let db = null;
+let loaded = null;   // какой язык сейчас открыт
 
-async function open() {
-  const SQL = await initSqlJs({ locateFile: (f) => `../vendor/${f}` });
-  const res = await fetch("../wortschatz.db");
-  if (!res.ok) throw new Error(`словарь не загрузился: HTTP ${res.status}`);
-  db = new SQL.Database(new Uint8Array(await res.arrayBuffer()));
+async function use(lang) {
+  if (loaded === lang) return;
+  SQL ||= await initSqlJs({ locateFile: (f) => `../vendor/${f}` });
+
+  const res = await fetch(`../db/wortschatz-${lang}.db`);
+  if (!res.ok) throw new Error(`словарь «${lang}» не загрузился: HTTP ${res.status}`);
+  const bytes = new Uint8Array(await res.arrayBuffer());
+
+  // Базы держатся в памяти целиком, поэтому предыдущую закрываем:
+  // три языка одновременно — это лишние десятки мегабайт на телефоне.
+  db?.close();
+  db = new SQL.Database(bytes);
+  loaded = lang;
 }
 
-/* sql.js отдаёт результат в виде {columns, values}; для UI удобнее объекты. */
+/* sql.js отдаёт результат как {columns, values}; для UI удобнее объекты. */
 function query(sql, params = []) {
   const stmt = db.prepare(sql);
   stmt.bind(params);
@@ -24,16 +34,26 @@ function query(sql, params = []) {
 }
 
 const handlers = {
-  stats: () =>
-    query(`SELECT level, COUNT(*) AS n FROM words
-           GROUP BY level ORDER BY MIN(freq_rank)`),
+  info: () => Object.fromEntries(query("SELECT key, value FROM info").map((r) => [r.key, r.value])),
 
-  random: ({ level }) =>
-    query(
-      `SELECT * FROM words ${level ? "WHERE level = ?" : ""}
-       ORDER BY RANDOM() LIMIT 1`,
-      level ? [level] : []
-    )[0] || null,
+  stats: () =>
+    query(`SELECT level, COUNT(*) AS n FROM words GROUP BY level ORDER BY MIN(freq_rank)`),
+
+  /* Новые слова выдаются строго по частотности: указатель профиля хранит,
+     докуда дошли, поэтому исключать уже пройденное не нужно. */
+  newWords: ({ afterRank = 0, limit = 20 }) =>
+    query(`SELECT * FROM words WHERE freq_rank > ? ORDER BY freq_rank LIMIT ?`,
+          [afterRank, limit]),
+
+  /* Карточки на повторение: id приходят из IndexedDB, значит порядок
+     задаётся снаружи и восстанавливается после выборки. */
+  byIds: ({ ids }) => {
+    if (!ids?.length) return [];
+    const rows = query(
+      `SELECT * FROM words WHERE id IN (${ids.map(() => "?").join(",")})`, ids);
+    const map = new Map(rows.map((r) => [r.id, r]));
+    return ids.map((id) => map.get(id)).filter(Boolean);
+  },
 
   /* FTS5 ищет по префиксу: "hau" находит Haus. Кавычки вокруг терма
      обязательны — иначе спецсимволы из ввода ломают синтаксис запроса. */
@@ -48,9 +68,9 @@ const handlers = {
   },
 };
 
-self.onmessage = async ({ data: { id, action, payload } }) => {
+self.onmessage = async ({ data: { id, action, lang, payload } }) => {
   try {
-    if (!db) await open();
+    await use(lang);
     self.postMessage({ id, ok: true, result: handlers[action](payload || {}) });
   } catch (e) {
     self.postMessage({ id, ok: false, error: e.message });

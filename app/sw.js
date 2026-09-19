@@ -1,29 +1,39 @@
-/* Офлайн-кэш. Версиюменять при каждом изменении файлов ниже,
+/* Офлайн-кэш. Версию менять при каждом изменении файлов ниже,
    иначе браузер продолжит отдавать старое содержимое. */
-const VERSION = "wortschatz-v1";
+const VERSION = "wortschatz-v3";
 
+/* Оболочка ставится сразу. Словари — нет: три языка это ~14 МБ,
+   и тянуть их все при первом запуске незачем. Кладём только язык
+   по умолчанию, остальные кэшируются при первом переключении. */
 const SHELL = [
   "./",
   "./index.html",
   "./css/app.css",
   "./js/app.js",
   "./js/db-worker.js",
+  "./js/progress.js",
+  "./js/mascot.js",
   "./vendor/sql-wasm.js",
   "./vendor/sql-wasm.wasm",
-  "./wortschatz.db",
-  "./icon.svg",
+  "./db/wortschatz-de.db",
+  "./icon-192.png",
+  "./icon-512.png",
   "./manifest.webmanifest",
+  "./mascot/base.png",
 ];
 
 self.addEventListener("install", (e) => {
-  // Словарь весит ~4,5 МБ и кладётся в кэш сразу: без него приложение бесполезно.
-  e.waitUntil(caches.open(VERSION).then((c) => c.addAll(SHELL)).then(() => self.skipWaiting()));
+  e.waitUntil(
+    caches.open(VERSION)
+      // Один недостающий файл не должен ронять всю установку.
+      .then((c) => Promise.allSettled(SHELL.map((u) => c.add(u))))
+      .then(() => self.skipWaiting())
+  );
 });
 
 self.addEventListener("activate", (e) => {
   e.waitUntil(
-    caches
-      .keys()
+    caches.keys()
       .then((keys) => Promise.all(keys.filter((k) => k !== VERSION).map((k) => caches.delete(k))))
       .then(() => self.clients.claim())
   );
@@ -31,8 +41,18 @@ self.addEventListener("activate", (e) => {
 
 self.addEventListener("fetch", (e) => {
   if (e.request.method !== "GET") return;
-  // Сначала кэш: содержимое статично, а работа без сети — главное требование.
   e.respondWith(
-    caches.match(e.request).then((hit) => hit || fetch(e.request))
+    caches.match(e.request).then((hit) => {
+      if (hit) return hit;
+      // Промах — скачиваем и кладём в кэш: так словарь второго языка
+      // становится доступен офлайн сразу после первого переключения.
+      return fetch(e.request).then((res) => {
+        if (res.ok && new URL(e.request.url).origin === location.origin) {
+          const copy = res.clone();
+          caches.open(VERSION).then((c) => c.put(e.request, copy));
+        }
+        return res;
+      });
+    })
   );
 });
